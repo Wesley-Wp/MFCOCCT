@@ -1,0 +1,1 @@
+DIR *.lib* /B >LIST.TXT
