@@ -110,4 +110,3 @@ extern Handle(Geom_Curve) GetCurve(TopoDS_Edge& aEdge);
 extern bool IsPointOnCurve(Handle(Geom_Curve)& aCurve, gp_Pnt Point);
 extern bool IsPointOnSurface(Handle(Geom_Surface)& aSurf, gp_Pnt Point);
 
-

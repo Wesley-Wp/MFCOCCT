@@ -1,4 +1,4 @@
-﻿
+
 // MFCOCCTDoc.cpp: CMFCOCCTDoc 类的实现
 //
 
