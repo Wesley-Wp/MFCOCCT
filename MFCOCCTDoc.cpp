@@ -544,6 +544,51 @@ void CMFCOCCTDoc::ImportOBJFile()
 	}
 }
 
+void CMFCOCCTDoc::ReadCloudPoints()
+{
+	CFileDialog dlg(TRUE,
+		NULL,
+		NULL,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		L"All Files (*.*)|*.*||",
+		NULL, 0, TRUE);
+	if (dlg.DoModal() == IDOK)
+	{
+		CStringA CP(dlg.GetPathName());
+		LPCSTR aFileName = CP;
+
+		std::ifstream file(aFileName);
+		if (!file)
+			return;
+
+		gp_Pnt pt;
+		Handle(AIS_PointCloud) pointCloud = new AIS_PointCloud();
+
+		// 创建空的OpenCASCADE形状
+		TopoDS_Compound shape;
+		BRep_Builder builder;
+		builder.MakeCompound(shape);
+		
+		// 逐行读取文件内容
+		std::string line;
+		while (std::getline(file, line))
+		{
+			// 解析每行内容并创建顶点
+			std::istringstream iss(line);
+			iss >> x >> y >> z;
+			gp_Pnt point(x, y, z);
+			TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(point);
+
+			// 将顶点添加到形状中
+			builder.Add(shape, vertex);
+		}
+		file.close();
+		Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+		myAISContext->Display(aisShape, true);
+		GetView()->FitAll();
+	}
+}
+
 CMFCOCCTView* CMFCOCCTDoc::GetView()
 {
 	POSITION pos = GetFirstViewPosition();

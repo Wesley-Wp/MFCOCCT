@@ -16,6 +16,8 @@ private:
 	gp_Pnt myPntEnd;
 	Handle(Geom_TrimmedCurve) mySegment1;
 	TopoDS_Edge myEdge1;
+
+	double x, y, z;
 protected: // 仅从序列化创建
 	CMFCOCCTDoc() noexcept;
 	DECLARE_DYNCREATE(CMFCOCCTDoc)
@@ -66,6 +68,7 @@ public:
 	void ImportIGESFile();
 	void ImportSTLFile();
 	void ImportOBJFile();
+	void ReadCloudPoints();
 
 	//2D画图
 	void Draw2DCircle();

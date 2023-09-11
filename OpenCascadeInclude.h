@@ -782,6 +782,8 @@
 #include <TopTools_HSequenceOfShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 
+#include <AIS_PointCloud.hxx>
+
 // Import Libraries
 
 //#pragma comment(lib, "TKVCAF.lib")

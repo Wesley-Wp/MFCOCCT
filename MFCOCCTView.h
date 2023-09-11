@@ -99,6 +99,7 @@ public:
 	afx_msg void On32806();
 	afx_msg void On32807();
 	afx_msg void OnImportObj();
+	afx_msg void OnReadcloudpoint();
 };
 
 #ifndef _DEBUG  // MFCOCCTView.cpp 中的调试版本

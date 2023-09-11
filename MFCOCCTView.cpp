@@ -58,6 +58,7 @@ BEGIN_MESSAGE_MAP(CMFCOCCTView, CView)
 	ON_COMMAND(ID_32806, &CMFCOCCTView::On32806)
 	ON_COMMAND(ID_32807, &CMFCOCCTView::On32807)
 	ON_COMMAND(ID_IMPORT_OBJ, &CMFCOCCTView::OnImportObj)
+	ON_COMMAND(ID_READCLOUDPOINT, &CMFCOCCTView::OnReadcloudpoint)
 END_MESSAGE_MAP()
 
 // CMFCOCCTView 构造/析构
@@ -461,4 +462,10 @@ void CMFCOCCTView::On32807()
 void CMFCOCCTView::OnImportObj()
 {
 	pDoc->ImportOBJFile();
+}
+
+
+void CMFCOCCTView::OnReadcloudpoint()
+{
+	pDoc->ReadCloudPoints();
 }
