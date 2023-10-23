@@ -59,6 +59,8 @@ BEGIN_MESSAGE_MAP(CMFCOCCTView, CView)
 	ON_COMMAND(ID_32807, &CMFCOCCTView::On32807)
 	ON_COMMAND(ID_IMPORT_OBJ, &CMFCOCCTView::OnImportObj)
 	ON_COMMAND(ID_READCLOUDPOINT, &CMFCOCCTView::OnReadcloudpoint)
+	ON_COMMAND(ID_CLOUDPOINT_WRIFE, &CMFCOCCTView::OnCloudpointWrife)
+	ON_COMMAND(ID_CLOUDPOINT_FACE, &CMFCOCCTView::OnCloudpointFace)
 END_MESSAGE_MAP()
 
 // CMFCOCCTView 构造/析构
@@ -142,7 +144,26 @@ void CMFCOCCTView::OnDraw(CDC* /*pDC*/)
 	if (!pDoc)
 		return;
 
-	// TODO: 在此处为本机数据添加绘制代码
+	//设置坐标轴相关
+	// Handle(AIS_InteractiveContext) context = new AIS_InteractiveContext();
+
+// create box shape as an OpenCASCADE entity
+	//BRepPrimAPI_MakeBox boxMaker(gp_Pnt(-5,-5,-5), gp_Pnt(5,5,5));
+	//TopoDS_Shape boxShape = boxMaker.Shape();
+	//Handle(AIS_Shape) boxEntity = new AIS_Shape(boxShape);
+	//pDoc->myAISContext->Display(boxEntity, true);
+
+	// set the drawing style of the box entity
+	//Handle(Prs3d_Drawer) boxStyle = boxEntity->Attributes()->FacePresentation();
+	//boxStyle->ChangeTransparency() = 0.6;
+	//boxStyle->SetShadingAspect(new Graphic3d_MaterialAspect(
+		//BOUNDING_BOX_COLOR,
+		//Graphic3d_NOM_SILVER,
+		//1.0));
+
+	//boxEntity->Attributes()->SetFaceBoundaryDraw(true);  // Show boundary edges
+	//boxEntity->Attributes()->SetFaceBoundaryAspect(new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.0));
+	//myView->TriedronDisplay(Aspect_TOTP_LEFT_LOWER, Quantity_NOC_GOLD, 0.08, V3d_ZBUFFER);
 	myView->MustBeResized();
 	myView->Update();
 }
@@ -468,4 +489,16 @@ void CMFCOCCTView::OnImportObj()
 void CMFCOCCTView::OnReadcloudpoint()
 {
 	pDoc->ReadCloudPoints();
+}
+
+
+void CMFCOCCTView::OnCloudpointWrife()
+{
+	pDoc->CloudPoint2WireFrame();
+}
+
+
+void CMFCOCCTView::OnCloudpointFace()
+{
+	pDoc->CloudPoint2Surface();
 }

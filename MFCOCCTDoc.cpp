@@ -26,8 +26,44 @@ BEGIN_MESSAGE_MAP(CMFCOCCTDoc, CDocument)
 	ON_COMMAND(ID_POPU_ADDTEXTURE, &CMFCOCCTDoc::OnPopuAddtexture)
 END_MESSAGE_MAP()
 
-
 // CMFCOCCTDoc 构造/析构
+
+void CMFCOCCTDoc::DrawScaleColor(int aMax, int aMin)
+{
+	// //云图制作集成在这个方法中
+	Handle(AIS_ColorScale) aColorScale = new AIS_ColorScale();
+	//获取界面的长和宽
+	CRect cr;
+	int cx = GetSystemMetrics(SM_CXFULLSCREEN);
+	int cy = GetSystemMetrics(SM_CYFULLSCREEN);
+	//设置云图参数,具体参数的含义可以参看OCC自带的用户手册
+	aColorScale->SetBreadth((int)(cx * 0.06));
+	aColorScale->SetHeight((int)(cy * 0.45));
+	aColorScale->SetRange(aMin, aMax);
+	aColorScale->SetNumberOfIntervals(10);
+	aColorScale->SetSmoothTransition(Standard_True);
+	aColorScale->SetLabelPosition(Aspect_TOCSP_RIGHT);
+	//这一步是将云图从X-Y空间 进行转换，很重要
+	aColorScale->SetZLayer(Graphic3d_ZLayerId_TopOSD);
+	double z = 0.1 * cy;
+	gp_Pnt thePoint(0.0, 0.0, z);
+	Graphic3d_Vec2i anoffset(0, Standard_Integer(thePoint.Z()));
+	myAISContext->SetTransformPersistence(aColorScale, new Graphic3d_TransformPers(Graphic3d_TMF_2d, Aspect_TOTP_LEFT_LOWER, anoffset));
+	//云图显示
+	myAISContext->SetDisplayMode(aColorScale, 1, Standard_False);
+	myAISContext->Display(aColorScale, Standard_False);
+}
+
+void CMFCOCCTDoc::BoundBox()
+{
+	gp_Pnt point1(-1, -1, -1);  // 包围盒最小顶点
+	gp_Pnt point2(1, 1, 1);    // 包围盒最大顶点
+
+	BRepPrimAPI_MakeBox makeBox(point1, point2);  // 创建包围盒实体
+	TopoDS_Shape boundingBox = makeBox.Shape();      // 获取包围盒形状
+	Handle(AIS_Shape) shape = new AIS_Shape(boundingBox);
+	myAISContext->Display(shape, Standard_True);
+}
 
 CMFCOCCTDoc::CMFCOCCTDoc() noexcept
 {
@@ -40,11 +76,13 @@ CMFCOCCTDoc::CMFCOCCTDoc() noexcept
 	myViewer = new V3d_Viewer(theGraphicDriver);
 	myViewer->SetDefaultLights();
 	myViewer->SetLightOn();
+
 	//创建了一个AIS_InteractiveContext对象，并将之前创建的V3d_Viewer对象传递给它。
 	//AIS_InteractiveContext用于处理交互操作，例如选择、高亮、变换等。
 	//SetDisplayMode(AIS_Shaded, true)设置显示模式为平滑着色模式，
 	//SetAutomaticHilight(Standard_False)关闭自动高亮功能。
 	myAISContext = new AIS_InteractiveContext(myViewer);
+	//BoundBox();
 	myAISContext->SetDisplayMode(AIS_Shaded, true);
 	myAISContext->SetAutomaticHilight(Standard_True);
 }
@@ -76,13 +114,14 @@ void CMFCOCCTDoc::Show2DShape(Handle(Geom_TrimmedCurve) theCurve, const Aspect_T
 {
 	Handle(AISCurve) aGraphicCurve = new AISCurve(theCurve, aTypeOfline, aWidthOfLine, theColor);
 	aGraphicCurve->SetDisplayMode(0);
-	ShowAllShapes(aGraphicCurve);
+	ShowAllShapes(aGraphicCurve, 1000, 0);
 }
 
-void CMFCOCCTDoc::ShowAllShapes(const Handle(AIS_InteractiveObject)& AShapes)
+void CMFCOCCTDoc::ShowAllShapes(const Handle(AIS_InteractiveObject)& AShapes, int aMax, int aMin)
 {
 	myAISContext->EraseAll(Standard_True);
 	myAISContext->Display(AShapes, Standard_False);
+	DrawScaleColor(aMax, aMin);
 	GetView()->FitAll();
 }
 
@@ -90,8 +129,8 @@ void CMFCOCCTDoc::DisplayShape(TopoDS_Shape& aShape, Quantity_Color theColor)
 {
 	Handle(AIS_Shape) aisShape = new AIS_Shape(aShape);
 	aisShape->SetColor(theColor);
-	//aisShape->SetDisplayMode((int)AIS_DisplayMode::AIS_Shaded);
-	ShowAllShapes(aisShape);
+	aisShape->SetDisplayMode((int)AIS_DisplayMode::AIS_Shaded);
+	ShowAllShapes(aisShape, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplayText(gp_Pnt2d& thePoint, const char* theText, Standard_Real theXoffset, Standard_Real theYoffset, Standard_Real theTextScale)
@@ -101,7 +140,7 @@ void CMFCOCCTDoc::DisplayText(gp_Pnt2d& thePoint, const char* theText, Standard_
 	aLabel->SetPosition(gp_Pnt(thePoint.X() + theXoffset, thePoint.Y() + theYoffset, 0.0));
 	aLabel->SetHeight(theTextScale);
 	aLabel->SetColor(Quantity_NOC_BLACK);
-	ShowAllShapes(aLabel);
+	ShowAllShapes(aLabel, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplayText(gp_Pnt& thePoint, const char* theText,
@@ -112,7 +151,7 @@ void CMFCOCCTDoc::DisplayText(gp_Pnt& thePoint, const char* theText,
 	aLabel->SetPosition(gp_Pnt(thePoint.X() + theXoffset, thePoint.Y() + theYoffset, thePoint.Z() + theZoffset));
 	aLabel->SetHeight(theTextScale);
 	aLabel->SetColor(Quantity_NOC_BLACK);
-	ShowAllShapes(aLabel);
+	ShowAllShapes(aLabel, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplayPoint(gp_Pnt2d& thePoint)
@@ -126,7 +165,7 @@ void CMFCOCCTDoc::DisplayPoint(gp_Pnt& thePoint)
 	Handle(AIS_Point) aGraphicPoint = new AIS_Point(new Geom_CartesianPoint(thePoint));
 	aGraphicPoint->SetMarker(Aspect_TypeOfMarker::Aspect_TOM_O);
 	aGraphicPoint->SetColor(Quantity_NOC_RED);
-	ShowAllShapes(aGraphicPoint);
+	ShowAllShapes(aGraphicPoint, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplayCurve(Handle(Geom_Curve) theCurve,
@@ -135,7 +174,7 @@ void CMFCOCCTDoc::DisplayCurve(Handle(Geom_Curve) theCurve,
 {
 	Handle(AISCurve) aGraphicCurve = new AISCurve(theCurve, Aspect_TOL_SOLID, 1, theColor);
 	aGraphicCurve->SetDisplayMode(0);
-	ShowAllShapes(aGraphicCurve);
+	ShowAllShapes(aGraphicCurve, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplayCurve(Handle(Geom2d_Curve) theCurve,
@@ -146,7 +185,7 @@ void CMFCOCCTDoc::DisplayCurve(Handle(Geom2d_Curve) theCurve,
 {
 	Handle(AISCurve) aGraphicCurve = new AISCurve(theCurve, aTypeOfline, aWidthOfLine, theColor);
 	aGraphicCurve->SetDisplayMode(0);
-	ShowAllShapes(aGraphicCurve);
+	ShowAllShapes(aGraphicCurve, 1000, 0);
 }
 
 void CMFCOCCTDoc::DisplaySurface(Handle(Geom_Surface) theSurface,
@@ -155,7 +194,7 @@ void CMFCOCCTDoc::DisplaySurface(Handle(Geom_Surface) theSurface,
 {
 	Handle(AISSurface) aAISSurface = new AISSurface(theSurface);
 	aAISSurface->SetColor(aNameOfColor);
-	ShowAllShapes(aAISSurface);
+	ShowAllShapes(aAISSurface, 1000, 0);
 }
 
 void CMFCOCCTDoc::DragEvent2D(const Standard_Integer x, const Standard_Integer y, const Standard_Integer TheState, const Handle(V3d_View)& aView)
@@ -488,7 +527,18 @@ void CMFCOCCTDoc::ImportIGESFile()
 		LPCSTR aFileName = C;
 
 		TopoDS_Shape aShape = OCCDataExchange::ImportIges(aFileName);
-		DisplayShape(aShape);
+		IGESControl_Reader reader;
+
+		IFSelect_ReturnStatus status = reader.ReadFile(aFileName);
+		if (status == IFSelect_RetDone)
+		{
+			reader.TransferRoots();
+			TopoDS_Shape shape = reader.OneShape();
+			Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+			//DisplayShape(aisShape);
+			myAISContext->Display(aisShape, true);
+			GetView()->FitAll();
+		}
 	}
 }
 
@@ -560,33 +610,179 @@ void CMFCOCCTDoc::ReadCloudPoints()
 		std::ifstream file(aFileName);
 		if (!file)
 			return;
-
-		gp_Pnt pt;
-		Handle(AIS_PointCloud) pointCloud = new AIS_PointCloud();
-
-		// 创建空的OpenCASCADE形状
-		TopoDS_Compound shape;
-		BRep_Builder builder;
-		builder.MakeCompound(shape);
 		
 		// 逐行读取文件内容
+		double minVal = INT_MAX;
+		double maxVal = INT_MIN;
+		std::string line;
+		std::vector<gp_Pnt> pointsVec;
+		while (std::getline(file, line))
+		{
+			std::istringstream iss(line);
+			double x, y, z;
+			if (!(iss >> x >> y >> z))
+				break;
+			pointsVec.push_back(gp_Pnt(x, y, z));
+			if (z < minVal)
+			{
+				minVal = z;
+			}
+			if (z > maxVal)
+			{
+				maxVal = z;
+			}
+		}
+		file.close();
+		TColgp_Array1OfPnt points(1, pointsVec.size());
+		for (int i = 1; i <= pointsVec.size(); ++i) {
+			points.SetValue(i, pointsVec[i - 1]);
+		}
+
+		Handle(Graphic3d_ArrayOfPoints) pointsArray = new Graphic3d_ArrayOfPoints(pointsVec.size());
+		for (int i = 1; i <= pointsVec.size(); ++i) {
+			pointsArray->AddVertex(points.Value(i));
+		}
+		
+
+		Handle(AIS_PointCloud) point_cloud = new AIS_PointCloud();
+		point_cloud->SetPoints(pointsArray);
+		point_cloud->SetColor(Quantity_NOC_RED);
+		ShowAllShapes(point_cloud, maxVal, minVal);
+	}
+}
+
+void CMFCOCCTDoc::CloudPoint2WireFrame()
+{
+	CFileDialog dlg(TRUE,
+		NULL,
+		NULL,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		L"All Files (*.*)|*.*||",
+		NULL, 0, TRUE);
+	if (dlg.DoModal() == IDOK)
+	{
+		CStringA CP(dlg.GetPathName());
+		LPCSTR aFileName = CP;
+
+		std::ifstream file(aFileName);
+		if (!file)
+		{
+			AfxMessageBox(_T("无法打开文件"));
+		}
+
+		// 读取文件内容并创建点云
+		std::vector<gp_Pnt> pts;
 		std::string line;
 		while (std::getline(file, line))
 		{
-			// 解析每行内容并创建顶点
 			std::istringstream iss(line);
-			iss >> x >> y >> z;
-			gp_Pnt point(x, y, z);
-			TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(point);
-
-			// 将顶点添加到形状中
-			builder.Add(shape, vertex);
+			double x, y, z;
+			if (!(iss >> x >> y >> z))
+			{
+				
+			}
+			pts.push_back(gp_Pnt(x, y, z));
 		}
 		file.close();
+		BRep_Builder brepBuilder;
+		TopoDS_Builder topoDSBuilder;
+		TopoDS_Shell shell;
+		//TopoDS_Solid shape;
+		TopoDS_Shape shape;
+		brepBuilder.MakeShell(shell);
+		for (int i = 0; i < pts.size(); i++)
+		{
+			brepBuilder.Add(shell, BRepBuilderAPI_MakeVertex(pts[i]));
+		}
+
+		// 创建面片并添加到网格形状
+		for (int i = 0; i < pts.size(); i++)
+		{
+			BRepBuilderAPI_MakePolygon face;
+			face = BRepBuilderAPI_MakePolygon(pts[i], pts[i + 1], pts[i + 2], Standard_True);
+			brepBuilder.Add(shell, face);
+		}
+
+		//topoDSBuilder.MakeSolid(shape);
+		topoDSBuilder.Add(shape, shell);
 		Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
 		myAISContext->Display(aisShape, true);
-		GetView()->FitAll();
+
+		//// 创建顶点和线
+		//TopoDS_Compound shape;
+		//BRep_Builder builder;
+		//builder.MakeCompound(shape);
+
+		//for (const auto& point : pts)
+		//{
+		//	TopoDS_Vertex vertex = BRepBuilderAPI_MakeVertex(point);
+		//	builder.Add(shape, vertex);
+		//}
+		//// 创建面片
+		//Handle(Poly_Triangulation) triangulation = new Poly_Triangulation;
+		//triangulation->SetNode(1, gp_Pnt());
+
+		//int index = 1;
+		//for (const auto& point : pts)
+		//{
+		//	triangulation->ChangeNode(index).SetCoord(point.X(), point.Y(), point.Z());
+		//	index++;
+		//}
+
+		//for (int i = 0; i < pts.size(); i += 3)
+		//{
+		//	Standard_Integer n1 = i + 1;
+		//	Standard_Integer n2 = i + 2;
+		//	Standard_Integer n3 = i + 3;
+		//	triangulation->AddTriangle(n1, n2, n3);
+		//}
+
+		//TopoDS_Face face;
+		//BRepBuilderAPI_MakePolygon polygon;
+		//ShapeFix_Wire wireFixer;
+		//wireFixer.SetFaceMode(Standard_True);
+		//for (int i = 0; i < triangulation->NbTriangles(); i++)
+		//{
+		//	Standard_Integer n1, n2, n3;
+		//	triangulation->Triangle(i + 1).Get(n1, n2, n3);
+
+		//	polygon.Add(gp_Pnt(triangulation->Node(n1).X(), triangulation->Node(n1).Y(), triangulation->Node(n1).Z()));
+		//	polygon.Add(gp_Pnt(triangulation->Node(n2).X(), triangulation->Node(n2).Y(), triangulation->Node(n2).Z()));
+		//	polygon.Add(gp_Pnt(triangulation->Node(n3).X(), triangulation->Node(n3).Y(), triangulation->Node(n3).Z()));
+
+		//	if (polygon.IsDone())
+		//	{
+		//		TopoDS_Shape wireShape = polygon.Wire();
+		//		wireFixer.Load(wireShape);
+		//		wireFixer.Perform();
+		//		wireShape = wireFixer.Wire();
+		//		if (wireShape.IsNull() || !wireShape.Closed())
+		//		{
+		//			polygon.Clear();
+		//			continue;
+		//		}
+		//		face = BRepBuilderAPI_MakeFace(wireFixer.Wire());
+
+		//		builder.Add(shape, face);
+
+		//		polygon.Clear();
+		//	}
+		//}
+
+
 	}
+	
+	// 创建显示对象
+	//Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+	//aisShape->SetColor(Quantity_NOC_RED);
+
+	// 将显示对象添加到交互上下文中
+	//m_context->Display(aisShape, true);
+}
+
+void CMFCOCCTDoc::CloudPoint2Surface()
+{
+	
 }
 
 CMFCOCCTView* CMFCOCCTDoc::GetView()

@@ -6,6 +6,13 @@
 #pragma once
 #include "OpenCascadeInclude.h"
 
+struct Point
+{
+	double x;
+	double y;
+	double z;
+};
+
 class CMFCOCCTView;
 class CMFCOCCTDoc : public CDocument
 {
@@ -16,8 +23,11 @@ private:
 	gp_Pnt myPntEnd;
 	Handle(Geom_TrimmedCurve) mySegment1;
 	TopoDS_Edge myEdge1;
+	std::vector<gp_Pnt> pts;
 
-	double x, y, z;
+	void DrawScaleColor(int aMax = 1000, int aMin = 0);
+	void BoundBox();
+
 protected: // 仅从序列化创建
 	CMFCOCCTDoc() noexcept;
 	DECLARE_DYNCREATE(CMFCOCCTDoc)
@@ -69,6 +79,8 @@ public:
 	void ImportSTLFile();
 	void ImportOBJFile();
 	void ReadCloudPoints();
+	void CloudPoint2WireFrame();
+	void CloudPoint2Surface();
 
 	//2D画图
 	void Draw2DCircle();
@@ -76,7 +88,7 @@ public:
 	void Show2DShape(Handle(Geom_TrimmedCurve) theCurve,	const Aspect_TypeOfLine aTypeOfline,
 		const Aspect_WidthOfLine aWidthOfLine, const Quantity_Color theColor,
 		Standard_Boolean theToUpdateViewer);
-	void ShowAllShapes(const Handle(AIS_InteractiveObject)& AShapes);
+	void ShowAllShapes(const Handle(AIS_InteractiveObject)& AShapes, int aMax, int aMin);
 public:
 	//-------------------- 2D -------------------//
 

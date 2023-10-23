@@ -549,6 +549,7 @@
 #include <Graphic3d_NameOfMaterial.hxx>  
 #include <Graphic3d_HorizontalTextAlignment.hxx>
 #include <Graphic3d_VerticalTextAlignment.hxx>
+#include <Graphic3d_AspectMarker.hxx>
 
 // OpenGl
 #include <OpenGl_GraphicDriver.hxx>
